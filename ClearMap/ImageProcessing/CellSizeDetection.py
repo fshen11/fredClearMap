@@ -10,7 +10,7 @@ The cell shape detection is based on a seeded and masked watershed.
 
 import sys
 import numpy
-
+import pdb
 #from scipy.ndimage.measurements import watershed_ift
 from skimage.morphology import watershed
 
@@ -69,7 +69,6 @@ def detectCellShape(img, peaks, detectCellShapeParameter = None, threshold = Non
         imgmask = img > threshold;
         
     imgpeaks = voxelizePixel(peaks, dataSize = img.shape, weights = numpy.arange(1, peaks.shape[0]+1));
-    
     imgws = watershed(-img, imgpeaks, mask = imgmask);
     #imgws = watershed_ift(-img.astype('uint16'), imgpeaks);
     #imgws[numpy.logical_not(imgmask)] = 0;
@@ -85,7 +84,7 @@ def detectCellShape(img, peaks, detectCellShapeParameter = None, threshold = Non
     
     if verbose:
         out.write(timer.elapsedTime(head = 'Cell Shape:') + '\n');
-    
+        print('Num Cell Shapes = ' + str(imgws.max()))
     return imgws
 
 
@@ -121,7 +120,6 @@ def findCellSize(imglabel, findCelSizeParameter = None, maxLabel = None, verbose
         maxLabel = int(imglabel.max());
      
     size = scipy.ndimage.measurements.sum(numpy.ones(imglabel.shape, dtype = bool), labels = imglabel, index = numpy.arange(1, maxLabel + 1));
-    
     if verbose:
         out.write(timer.elapsedTime(head = 'Cell size detection:') + '\n');
     

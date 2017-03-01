@@ -2,16 +2,16 @@
 """
 Template to run the processing pipeline
 """
-
+import pdb
 #load the parameters:
-execfile('/home/yourname/experiment/parameter_file_sampleID.py')
+execfile('/home/cailab/ClearMap/ClearMap/Scripts/parameter_file_template.py')
 
 
 #resampling operations:
 #######################
 #resampling for the correction of stage movements during the acquisition between channels:
-resampleData(**CorrectionResamplingParameterCfos);
-resampleData(**CorrectionResamplingParameterAutoFluo);
+#resampleData(**CorrectionResamplingParameterCfos);
+#resampleData(**CorrectionResamplingParameterAutoFluo);
 
 #Downsampling for alignment to the Atlas:
 resampleData(**RegistrationResamplingParameter);
@@ -20,7 +20,7 @@ resampleData(**RegistrationResamplingParameter);
 #Alignment operations:
 ######################
 #correction between channels:
-resultDirectory  = alignData(**CorrectionAlignmentParameter);
+#resultDirectory  = alignData(**CorrectionAlignmentParameter);
 
 #alignment to the Atlas:
 resultDirectory  = alignData(**RegistrationAlignmentParameter);
@@ -40,7 +40,7 @@ points, intensities = io.readPoints(ImageProcessingParameter["sink"]);
 #row = (1,1) : peak intensity from the DoG filtered data
 #row = (2,2) : peak intensity from the background subtracted data
 #row = (3,3) : voxel size from the watershed
-points, intensities = thresholdPoints(points, intensities, threshold = (20, 900), row = (3,3));
+points, intensities = thresholdPoints(points, intensities, threshold = (2, 10), row = (1,1));
 io.writePoints(FilteredCellsFile, (points, intensities));
 
 

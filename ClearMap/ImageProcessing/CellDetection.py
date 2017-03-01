@@ -43,7 +43,7 @@ from ClearMap.ImageProcessing.StackProcessing import parallelProcessStack, seque
 from ClearMap.Utils.Timer import Timer
     
 
-def detectCells(source, sink = None, method ="SpotDetection", processMethod = all, verbose = False, **parameter):
+def detectCells(source, sink = None, method ="SpotDetection", processMethod = all, verbose = False  , **parameter):
     """Detect cells in data
     
     This is a main script to start running the cell detection.    

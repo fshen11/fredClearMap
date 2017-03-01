@@ -6,7 +6,7 @@ Example script to set up the parameters for the image processing pipeline
 ######################### Import modules
 
 import os, numpy, math
-
+import pdb
 import ClearMap.Settings as settings
 import ClearMap.IO as io
 
@@ -24,20 +24,19 @@ from ClearMap.Analysis.Label import labelToName
 ######################### Data parameters
 
 #Directory to save all the results, usually containing the data for one sample
-BaseDirectory = '/home/yourname/experiment/sampleID';
+BaseDirectory = '/media/sf_Fred_Data/testClearMap';
 
 #Data File and Reference channel File, usually as a sequence of files from the microscope
 #Use \d{4} for 4 digits in the sequence for instance. As an example, if you have cfos-Z0001.ome.tif :
 #os.path.join() is used to join the BaseDirectory path and the data paths:
-cFosFile = os.path.join(BaseDirectory, 'channel1/cfos-Z\d{4}.ome.tif');
-AutofluoFile = os.path.join(BaseDirectory, 'channel2/ref-Z\d{4}.ome.tif');
+cFosFile = os.path.join(BaseDirectory, '1741-2-5/test-z\d{4}.tif');
+AutofluoFile = os.path.join(BaseDirectory, '1741-2-5/test-z\d{4}.tif');
 
 #Specify the range for the cell detection. This doesn't affect the resampling and registration operations
-cFosFileRange = {'x' : all, 'y' : (180, 2560), 'z' : all};
+cFosFileRange = {'x' : (3300,3500), 'y' : (600,800), 'z' : all};
 
 #Resolution of the Raw Data (in um / pixel)
-OriginalResolution = (4.0625, 4.0625, 3);
-
+OriginalResolution = (2.37, 2.37, 10);
 #Orientation: 1,2,3 means the same orientation as the reference and atlas files.
 #Flip axis with - sign (eg. (-1,2,3) flips x). 3D Rotate by swapping numbers. (eg. (2,1,3) swaps x and y)
 FinalOrientation = (1,2,3);
@@ -46,9 +45,9 @@ FinalOrientation = (1,2,3);
 AtlasResolution = (25, 25, 25);
 
 #Path to registration parameters and atlases
-PathReg        = '/home/mtllab/Documents/warping';
-AtlasFile      = os.path.join(PathReg, 'half_template_25_right_fullWD.tif');
-AnnotationFile = os.path.join(PathReg, 'annotation_25_right_fullWD.tif');
+PathReg        = '/home/cailab/clearmap_ressources_mouse_brain/ClearMap_ressources/';
+AtlasFile      = os.path.join(PathReg, 'template_25.tif');
+AnnotationFile = os.path.join(PathReg, 'annotation_25_full.nrrd');
 
 
 
@@ -69,14 +68,14 @@ correctIlluminationParameter = {
 
 #Remove the background with morphological opening (optimised for spherical objects)
 removeBackgroundParameter = {
-    "size"    : (7,7),  # size in pixels (x,y) for the structure element of the morphological opening
+    "size"    : (4,4),  # size in pixels (x,y) for the structure element of the morphological opening
     "save"    : None,     # file name to save result of this operation
     "verbose" : True  # print / plot information about this step       
 }
 
 #Difference of Gaussians filter: to enhance the edges. Useful if the objects have a non smooth texture (eg: amyloid deposits)
 filterDoGParameter = {
-    "size"    : None,        # (tuple or None)      size for the DoG filter in pixels (x,y,z) if None, do not correct for any background
+    "size"    : (12,12,5),        # (tuple or None)      size for the DoG filter in pixels (x,y,z) if None, do not correct for any background
     "sigma"   : None,        # (tuple or None)      std of outer Gaussian, if None automatically determined from size
     "sigma2"  : None,        # (tuple or None)      std of inner Gaussian, if None automatically determined from size
     "save"    : None,        # (str or None)        file name to save result of this operation if None dont save to file 
@@ -145,14 +144,14 @@ voxelizeParameter = {
 
 #Processes to use for Resampling (usually twice the number of physical processors)
 ResamplingParameter = {
-    "processes": 12 
+    "processes": 4 
 };
 
 
 #Stack Processing Parameter for cell detection
 StackProcessingParameter = {
     #max number of parallel processes. Be careful of the memory footprint of each process!
-    "processes" : 6,
+    "processes" : 4,
    
     #chunk sizes: number of planes processed at once
     "chunkSizeMax" : 100,
@@ -233,7 +232,7 @@ RegistrationAlignmentParameter["fixedImage"]   = os.path.join(BaseDirectory, 'au
 
 #elastix parameter files for alignment
 RegistrationAlignmentParameter["affineParameterFile"]  = os.path.join(PathReg, 'Par0000affine.txt');
-RegistrationAlignmentParameter["bSplineParameterFile"] = os.path.join(PathReg, 'Par0000bspline.txt');
+RegistrationAlignmentParameter["bSplineParameterFile"] = os.path.join(PathReg, 'BsplineDefault.txt');
 
 
 

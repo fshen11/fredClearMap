@@ -19,7 +19,7 @@ import math
 import numpy
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-
+import pdb
 import ClearMap.IO as io
 import ClearMap.Analysis.Voxelization as vox
 
@@ -204,14 +204,12 @@ def overlayPoints(dataSource, pointSource, sink = None, pointColor = [1,0,0], x 
     data = io.readData(dataSource, x = x, y = y, z = z);
     points = io.readPoints(pointSource, x = x, y = y, z = z, shift = True);
     #print data.shape
-    
     if not pointColor is None:
         dmax = data.max(); dmin = data.min();
         if dmin == dmax:
             dmax = dmin + 1;
         cimage = numpy.repeat( (data - dmin) / (dmax - dmin), 3);
         cimage = cimage.reshape(data.shape + (3,));    
-    
         if data.ndim == 2:
             for p in points: # faster version using voxelize ?
                 cimage[p[0], p[1], :] = pointColor;
@@ -230,6 +228,52 @@ def overlayPoints(dataSource, pointSource, sink = None, pointColor = [1,0,0], x 
     
     #print cimage.shape    
     return io.writeData(sink, cimage);   
+
+def fredOverlayPoints(dataSource, pointSource, sink = None, pointColor = [1,0,0], x = all, y = all, z = all):
+    """Overlay points on 3D data and return as color image
+    
+    Arguments:
+        dataSouce (str or array): volumetric image data
+        pointSource (str or array): point data to be overlayed on the image data
+        pointColor (array): RGB color for the overlayed points
+        x, y, z (all or tuple): sub-range specification
+    
+    Returns:
+        (str or array): image overlayed with points
+        
+    See Also:
+        :func:`overlayLabel`
+    """
+    data = io.readData(dataSource, x = x, y = y, z = z);
+    data = data.astype('int8');
+    points = io.readPoints(pointSource, x = x, y = y, z = z, shift = True);
+    #print data.shape
+    if not pointColor is None:
+        dmax = data.max(); dmin = data.min();
+        if dmin == dmax:
+            dmax = dmin + 1;
+        cimage = numpy.repeat(data, 3);
+        cimage = cimage.reshape(data.shape + (3,));      
+ 
+        if data.ndim == 2:
+            cimage[:,:,1] = data;
+            for p in points: # faster version using voxelize ?
+                cimage[p[0], p[1], :] = pointColor;
+        elif data.ndim == 3:
+            for p in points: # faster version using voxelize ?
+                cimage[p[0], p[1], p[2], :] = pointColor;
+        else:
+            raise RuntimeError('overlayPoints: data dimension %d not suported' % data.ndim);
+    
+    else:
+        cimage = vox.voxelize(points, data.shape, method = 'Pixel');
+        cimage = cimage.astype(data.dtype) * data.max();
+        data.shape = data.shape + (1,);
+        cimage.shape =  cimage.shape + (1,);
+        cimage = numpy.concatenate((data, cimage), axis  = 3);
+    
+    #print cimage.shape    
+    return io.writeData(sink, cimage); 
 
 
 def plotOverlayPoints(dataSource, pointSource, pointColor = [1,0,0], x = all, y = all, z = all):

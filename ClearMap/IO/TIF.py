@@ -20,7 +20,7 @@ Example:
 
 import numpy
 import tifffile as tiff
-
+import numpy
 import ClearMap.IO as io
 
 
@@ -128,8 +128,9 @@ def readData(filename, x = all, y = all, z = all, **args):
                 xydata = t.pages[i].asarray();
                 #data[:,:,i-rz[0]] = io.dataToRange(xydata, x = x, y = y);
                 data[:,:,i-rz[0]] = io.dataToRange(xydata.transpose([1,0]), x = x, y = y);
-            
-            return data
+    if data.ndim ==2:
+        data = data[...,numpy.newaxis];
+    return data
 
 
 def writeData(filename, data):

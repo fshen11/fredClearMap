@@ -53,7 +53,7 @@ import tempfile
 import shutil
 import numpy
 import re
-
+import pdb
 import ClearMap.Settings as settings
 import ClearMap.IO as io
 
@@ -269,7 +269,48 @@ def setPathTransformParameterFiles(resultdir):
         os.remove(ff);
         shutil.move(tmpfn, ff);
 
+def getMinMetric(fileDir, resolutions, samples,transformations):
+    metrics = numpy.zeros((samples+1,resolutions,transformations))
+    for i in range(transformations):
+        for j in range(resolutions):
+            filename = os.path.join(fileDir,'IterationInfo.'+str(i)+'.R'+str(j)+'.txt')
+            with open(filename) as f:
+                lines = f.readlines()
+                f.close();
+            np = len(lines);               
+            if np == 0:
+                return numpy.zeros((0,3));
+            for k in range(1,np):
+                ls = lines[k].split()        
+                metrics[k,j,i] = float(ls[1])
+    return metrics.min()
 
+def autoAlignData(fixedImage, atlasDir, affineParameterFile, bSplineParameterFile, resultDirectory = None, tempDir = None,sliceNum = None, bounds = None,orientation = None):
+    oldMetric = 0;
+    if sliceNum == None:
+        lowB = 0;
+        if orientation == 'Coronal':
+            upperB = 527;
+        else:
+            upperB = 228;
+    else:
+        lowB = sliceNum-bounds;
+        upperB = sliceNum+bounds;
+    for i in range(lowB, upperB):
+        movingImage = os.path.join(atlasDir,'Ref'+str(i).zfill(3)+'.tif')
+        alignData(fixedImage,movingImage, affineParameterFile, bSplineParameterFile, tempDir);
+        newMetric = getMinMetric(tempDir,4,500,2);
+        print(str(i)+','+str(newMetric));
+        if newMetric<oldMetric:
+            shutil.copy(os.path.join(tempDir,'TransformParameters.1.txt'),os.path.join(resultDirectory,'TransformParameters.1.txt'));
+            shutil.copy(os.path.join(tempDir,'TransformParameters.0.txt'),os.path.join(resultDirectory,'TransformParameters.0.txt'));
+            shutil.copy(os.path.join(tempDir,'Result.1.raw'),os.path.join(resultDirectory,'Result.1.raw'));
+            shutil.copy(os.path.join(tempDir,'Result.1.mhd'),os.path.join(resultDirectory,'Result.1.mhd'));
+            bestSlice = i;
+            print('New Best Slice!');
+            oldMetric = newMetric;
+    return bestSlice
+            
 def parseElastixOutputPoints(filename, indices = True):
     """Parses the output points from the output file of transformix
     
@@ -290,21 +331,57 @@ def parseElastixOutputPoints(filename, indices = True):
     if np == 0:
         return numpy.zeros((0,3));
     
-    points = numpy.zeros((np, 3));
+    ##change to 3 if 3dim image
+    points = numpy.zeros((np, 2));
     k = 0;
     for line in lines:
         ls = line.split();
         if indices:
-            for i in range(0,3):
+            for i in range(0,2):
                 points[k,i] = float(ls[i+22]);
         else:
-            for i in range(0,3):
+            for i in range(0,2):
                 points[k,i] = float(ls[i+30]);
-        
         k += 1;
     
     return points;
-          
+    
+def parseElastixOutputPoints2d(filename, indices = True):
+    """Parses the output points from the output file of transformix 2d
+    
+    Arguments:
+        filename (str): file name of the transformix output file
+        indices (bool): if True return pixel indices otherwise float coordinates
+        
+    Returns:
+        points (array): the transformed coordinates     
+    """
+    
+    with open(filename) as f:
+        lines = f.readlines()
+        f.close();
+    
+    np = len(lines);
+    
+    if np == 0:
+        return numpy.zeros((0,3));
+    
+    ##change to 3 if 3dim image
+    points = numpy.zeros((np, 2));
+    k = 0;
+    for line in lines:
+        ls = line.split();
+        if indices:
+            for i in range(0,2):
+                points[k,i] = float(ls[i+22]);
+        else:
+#            for i in range(0,2):
+#                points[k,i] = float(ls[i+30]);
+                points[k,0] = float(ls[27]);
+                points[k,1] = float(ls[28]);
+        k += 1;
+    
+    return points;
          
 def getTransformFileSizeAndSpacing(transformfile):
     """Parse the image size and spacing from a transformation parameter file
@@ -453,18 +530,15 @@ def alignData(fixedImage, movingImage, affineParameterFile, bSplineParameterFile
     
     
     if bSplineParameterFile is None:
-        cmd = ElastixBinary + ' -threads 16 -m ' + movingImage + ' -f ' + fixedImage + ' -p ' + affineParameterFile + ' -out ' + resultDirectory;
+        cmd = 'elastix' + ' -threads 4 -m ' + movingImage + ' -f ' + fixedImage + ' -p ' + affineParameterFile + ' -out ' + resultDirectory;
     elif affineParameterFile is None:
-        cmd = ElastixBinary + ' -threads 16 -m ' + movingImage + ' -f ' + fixedImage + ' -p ' + bSplineParameterFile + ' -out ' + resultDirectory;
+        cmd = 'elastix' + ' -threads 4 -m ' + movingImage + ' -f ' + fixedImage + ' -p ' + bSplineParameterFile + ' -out ' + resultDirectory;
     else:
-        cmd = ElastixBinary + ' -threads 16 -m ' + movingImage + ' -f ' + fixedImage + ' -p ' + affineParameterFile + ' -p ' + bSplineParameterFile + ' -out ' + resultDirectory;
+        cmd = 'elastix' + ' -threads 4 -m ' + movingImage + ' -f ' + fixedImage + ' -p ' + affineParameterFile + ' -p ' + bSplineParameterFile + ' -out ' + resultDirectory;
         #$ELASTIX -threads 16 -m $MOVINGIMAGE -f $FIXEDIMAGE -fMask $FIXEDIMAGE_MASK -p  $AFFINEPARFILE -p $BSPLINEPARFILE -out $ELASTIX_OUTPUT_DIR
-    
     res = os.system(cmd);
-    
     if res != 0:
         raise RuntimeError('alignData: failed executing: ' + cmd);
-    
     return resultDirectory
 
 
@@ -523,8 +597,7 @@ def transformData(source, sink = [], transformParameterFile = None, transformDir
     setPathTransformParameterFiles(transformparameterdir);
    
     #transformix -in inputImage.ext -out outputDirectory -tp TransformParameters.txt
-    cmd = TransformixBinary + ' -in ' + imgname + ' -out ' + resultdirname + ' -tp ' + transformParameterFile;
-    
+    cmd = 'transformix'  + ' -in ' + imgname + ' -out ' + resultdirname + ' -tp ' + transformParameterFile;
     res = os.system(cmd);
     
     if res != 0:
@@ -697,14 +770,14 @@ def transformPoints(source, sink = None, transformParameterFile = None, transfor
         with open(source) as f:
             line = f.readline();
             f.close();
-            
-            if line[:5] == 'point' or line[:5] != 'index':
-                txtfile = source;
-            else:                
-                points = io.readPoints(source);
-                #points = points[:,[1,0,2]];
-                txtfile = tmpFile;
-                writePoints(txtfile, points); 
+            txtfile = source
+#            if line[:5] == 'point' or line[:5] != 'index':
+#                txtfile = source;
+#            else:                
+#                points = io.readPoints(source);
+#                #points = points[:,[1,0,2]];
+#                txtfile = tmpFile;
+#                writePoints(txtfile, points); 
     
     elif isinstance(source, numpy.ndarray):
         txtfile = tmpFile;
@@ -739,16 +812,14 @@ def transformPoints(source, sink = None, transformParameterFile = None, transfor
     setPathTransformParameterFiles(transformparameterdir);
     
     #run transformix   
-    cmd = TransformixBinary + ' -def ' + txtfile + ' -out ' + outdirname + ' -tp ' + transformparameterfile;
+    cmd = 'transformix' + ' -def ' + txtfile + ' -out ' + outdirname + ' -tp ' + transformparameterfile;
     res = os.system(cmd);
     
     if res != 0:
         raise RuntimeError('failed executing ' + cmd);
-    
-    
     #read data / file 
-    if sink == []:
-        return io.path.join(outdirname, 'outputpoints.txt')
+    if sink == None:
+        return os.path.join(outdirname, 'outputpoints.txt')
     
     else:
         #read coordinates

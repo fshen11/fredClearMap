@@ -47,7 +47,7 @@ the folder 'Test/Data/CellShape/cellshape\_\\d{3}.tif'.
 
 import sys
 import numpy
-
+import ipdb
 
 from ClearMap.ImageProcessing.IlluminationCorrection import correctIllumination
 from ClearMap.ImageProcessing.BackgroundRemoval import removeBackground
@@ -65,7 +65,7 @@ from ClearMap.Utils.ParameterTools import getParameter
 
 def detectSpots(img, detectSpotsParameter = None, correctIlluminationParameter = None, removeBackgroundParameter = None,
                 filterDoGParameter = None, findExtendedMaximaParameter = None, detectCellShapeParameter = None,
-                verbose = False, out = sys.stdout, **parameter):
+                verbose = True, out = sys.stdout, **parameter):
     """Detect Cells in 3d grayscale image using DoG filtering and maxima detection
     
     Effectively this function performs the following steps:
@@ -88,10 +88,9 @@ def detectSpots(img, detectSpotsParameter = None, correctIlluminationParameter =
         
     Returns:
         tuple: tuple of arrays (cell coordinates, raw intensity, fully filtered intensty, illumination and background corrected intensity [, cell size])
-    """
-
+"""
     timer = Timer();
-    
+
     # normalize data -> to check
     #img = img.astype('float');
     #dmax = 0.075 * 65535;
@@ -105,12 +104,14 @@ def detectSpots(img, detectSpotsParameter = None, correctIlluminationParameter =
     # correct illumination
     correctIlluminationParameter = getParameter(detectSpotsParameter, "correctIlluminationParameter", correctIlluminationParameter);
     img1 = img.copy();
+    
     img1 = correctIllumination(img1, correctIlluminationParameter = correctIlluminationParameter, verbose = verbose, out = out, **parameter)   
 
     # background subtraction in each slice
     #img2 = img.copy();
     removeBackgroundParameter = getParameter(detectSpotsParameter, "removeBackgroundParameter", removeBackgroundParameter);
     img2 = removeBackground(img1, removeBackgroundParameter = removeBackgroundParameter, verbose = verbose, out = out, **parameter)   
+    
     
     # mask
     #timer.reset();
@@ -181,7 +182,7 @@ def detectSpots(img, detectSpotsParameter = None, correctIlluminationParameter =
 
         #intensity of cells in background image
         cintensity2 = findIntensity(img2, centers, verbose = verbose, out = out, **parameter);
-    
+        
         #intensity of cells in dog filtered image
         if dogSize is None:
             cintensity3 = cintensity2;

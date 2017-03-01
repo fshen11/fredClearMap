@@ -31,12 +31,13 @@ import numpy
 import os
 import csv
 import collections
-
 import ClearMap.IO as io
 
 from ClearMap.Settings import ClearMapPath
 
-DefaultLabeledImageFile = os.path.join(ClearMapPath, 'Test/Data/Annotation/annotation_25_right.tif');
+#DefaultLabeledImageFile = os.path.join(ClearMapPath, 'Test/Data/Annotation/annotation_25_right.tif');
+DefaultLabeledImageFile = '/media/sf_Fred_Data/testClearMap/annotationSlice310.tif';
+
 """str: default volumetric annotated image file
 
 This file is by default the Allen brain annotated mouse atlas with 25um 
@@ -45,6 +46,8 @@ isotropic resolution.
 
 
 DefaultAnnotationFile   = os.path.join(ClearMapPath, 'Data/ARA2_annotation_info_collapse.csv');
+#DefaultAnnotationFile = '/home/cailab/clearmap_ressources_mouse_brain/ClearMap_ressources/regionsIDs.csv'
+
 """str: default list of labels in the annotated image and names of annotated regions
 
 This file is by default the labels for the Allen brain annotated mouse 
@@ -224,14 +227,45 @@ def labelPoints(points, labeledImage = DefaultLabeledImageFile, level = None, co
     
     return pointLabels;
 
+def labelPoints2d(points, labeledImage = DefaultLabeledImageFile, level = None, collapse = None):
+    #points are (y,x,z) -> which is also the way the labeled image is read in
+    #x = points[:,1];
+    #y = points[:,0];
+    #z = points[:,2];
+    global label
+    x = points[:,0];
+    y = points[:,1];
+    
+    nPoint = x.size;    
+    
+    pointLabels = numpy.zeros(nPoint, 'int32');
 
+    labelImage = io.readData(labeledImage);    
+    dsize = labelImage.shape;
+
+    for i in range(nPoint):
+        #if y[i] >= 0 and y[i] < dsize[0] and x[i] >= 0 and x[i] < dsize[1] and z[i] >= 0 and z[i] < dsize[2]:
+        #     pointLabels[i] = labelImage[y[i], x[i], z[i]];
+        if x[i] >= 0 and x[i] < dsize[0] and y[i] >= 0 and y[i] < dsize[1]:
+            pointLabels[i] = labelImage[int(x[i]), int(y[i])];
+    
+    if collapse is None:
+        pointLabels = labelAtLevel(pointLabels, level);
+    else:
+        pointLabels = labelAtCollapse(pointLabels);
+    
+    return pointLabels;
  
 def countPointsInRegions(points, labeledImage = DefaultLabeledImageFile, intensities = None, intensityRow = 0, level= None, allIds = False, sort = True, returnIds = True, returnCounts = False, collapse = None):
     global Label;
     
     points = io.readPoints(points);
     intensities = io.readPoints(intensities);
-    pointLabels = labelPoints(points, labeledImage, level = level, collapse = collapse); 
+    if points.ndim==2:
+        pointLabels = labelPoints2d(points, labeledImage, level = level, collapse = collapse); 
+    else:
+        pointLabels = labelPoints(points, labeledImage, level = level, collapse = collapse); 
+
     
     if intensities is None:
         ll, cc = numpy.unique(pointLabels, return_counts = True);

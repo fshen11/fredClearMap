@@ -156,7 +156,7 @@ def findExtendedMaxima(img, findExtendedMaximaParameter = None, hMax = None, siz
 
     if verbose:
         writeParameter(out = out, head = 'Extended Max:', hMax = hMax, size = size, threshold = threshold, save = save);
-    
+        
     timer = Timer();
     
     ## extended maxima    
@@ -179,7 +179,6 @@ def findExtendedMaxima(img, findExtendedMaximaParameter = None, hMax = None, siz
         
     if verbose:
         out.write(timer.elapsedTime(head = 'Extended Max') + '\n');
-    
     return imgmax
 
 
@@ -244,7 +243,7 @@ def findCenterOfMaxima(img, imgmax = None, label = None, findCenterOfMaximaParam
         
         if verbose:
             out.write(timer.elapsedTime(head = 'Cell Centers'));
-        
+            print('\n Number of Cells='+str(centers.shape[0]))
         #return ( centers, cintensity );
         return centers;
         

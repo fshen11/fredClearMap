@@ -12,7 +12,7 @@ See :mod:`ClearMap.IO` for details.
 
 import sys
 self = sys.modules[__name__];
-
+import pdb
 import os
 import re
 import numpy
@@ -856,10 +856,8 @@ def writePoints(sink, points, **args):
     See Also:
         :func:`readPoints`
     """ 
-    
     #todo: make clean independent of return of two results -> io.wrtiePoints -> take care of pairs: (points,intensities)
     istuple = isinstance(sink, tuple);    
-    
     if sink is None:
         sink = (None, None);
     elif isinstance(sink, basestring):
@@ -895,13 +893,17 @@ def writePoints(sink, points, **args):
     else:
         mod = self.pointFileNameToModule(sink[1]);
         retproperties = mod.writePoints(sink[1], properties);
-        
+
     if istuple:
         return (retpoints, retproperties);
     else:
         return retpoints;
     
-
+def writeElastixPoints(sink,points):        
+    #Write points to txt file that can be used as input for Transformix
+    numpy.savetxt(sink, points, delimiter=' ', newline = '\n', header='point \n' + str(points.shape[0]), comments = '')
+    
+    
 
 
 def writeTable(filename, table):

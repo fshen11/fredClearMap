@@ -41,7 +41,7 @@ final total image.
 import sys
 import math
 import numpy
-
+import pdb
 from multiprocessing import Pool
 
 import ClearMap.IO as io
@@ -372,7 +372,7 @@ def noProcessing(img, **parameter):
 def parallelProcessStack(source, x = all, y = all, z = all, sink = None,
                          processes = 2, chunkSizeMax = 100, chunkSizeMin = 30, chunkOverlap = 15,
                          chunkOptimization = True, chunkOptimizationSize = all, 
-                         function = noProcessing, join = joinPoints, verbose = False, **parameter):
+                         function = noProcessing, join = joinPoints, verbose = True, **parameter):
     """Parallel process a image stack
     
     Main routine that distributes image processing on paralllel processes.
@@ -415,12 +415,11 @@ def parallelProcessStack(source, x = all, y = all, z = all, sink = None,
     pool = Pool(processes = processes);    
     results = pool.map(_processSubStack, argdata);
     
-    #print '=========== results';
-    #print results;
+    print '=========== results';
+    print results;
         
     #join the results
     results = join(results, subStacks = subStacks, **parameter);
-    
     #write / or return 
     return io.writePoints(sink, results);
 

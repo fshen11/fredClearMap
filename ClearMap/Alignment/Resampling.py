@@ -67,10 +67,10 @@ import sys
 import os
 import math
 import numpy
-
+import pdb
 import multiprocessing  
 import tempfile
-
+import pdb
 import shutil
 import cv2
 
@@ -170,7 +170,6 @@ def orientResolution(resolution, orientation):
     """
     if resolution is None:
         return None;
-    
     per = orientationToPermuation(orientation);
     #print orientation, per, resolution
     return tuple(resolution[i] for i in per);
@@ -260,7 +259,6 @@ def resampleDataSize(dataSizeSource, dataSizeSink = None, resolutionSource = Non
         #orient resolution of source to resolution of sink to get sink data size
         resolutionSourceO = orientResolution(resolutionSource, orientation);
         dataSizeSourceO = orientDataSize(dataSizeSource, orientation);
-        
         #calculate scaling factor
         dataSizeSink = tuple([int(math.ceil(dataSizeSourceO[i] *  resolutionSourceO[i]/resolutionSink[i])) for i in range(len(dataSizeSource))]);        
         
@@ -289,7 +287,6 @@ def resampleDataSize(dataSizeSource, dataSizeSink = None, resolutionSource = Non
             resolutionSource = orientResolutionInverse(resolutionSource, orientation);
     
     #print resolutionSource, "res source sink"
-    
     dataSizeSourceO = orientDataSize(dataSizeSource, orientation);
     
     
@@ -415,15 +412,12 @@ def resampleData(source, sink = None,  orientation = None, dataSizeSink = None, 
         * only a minimal set of information to detremine the resampling parameter 
           has to be given, e.g. dataSizeSource and dataSizeSink
     """
-        
     orientation = fixOrientation(orientation);
     
     if isinstance(dataSizeSink, basestring):
         dataSizeSink = io.dataSize(dataSizeSink);
-
     #orient actual resolutions onto reference resolution    
     dataSizeSource = io.dataSize(source);
-        
     dataSizeSource, dataSizeSink, resolutionSource, resolutionSink = resampleDataSize(dataSizeSource = dataSizeSource, dataSizeSink = dataSizeSink, 
                                                                                       resolutionSource = resolutionSource, resolutionSink = resolutionSink, orientation = orientation);
     
@@ -502,8 +496,9 @@ def resampleData(source, sink = None,  orientation = None, dataSizeSink = None, 
             sink = source + '_resample.tif';
         else:
             raise RuntimeError('resampleData: automatic sink naming not supported for non string source!');
-    
-    return io.writeData(sink, resampledData);
+
+    scaleFactor = numpy.true_divide(source.shape,resampledData.shape)
+    return io.writeData(sink, resampledData), scaleFactor 
     
     
     
@@ -652,7 +647,8 @@ def resamplePoints(pointSource, pointSink = None, dataSizeSource = None, dataSiz
     #datasize of data source
     if isinstance(dataSizeSource, basestring):
         dataSizeSource = io.dataSize(dataSizeSource);
-    
+
+    #orient actual resolutions onto reference resolution    
     dataSizeSource, dataSizeSink, resolutionSource, resolutionSink = resampleDataSize(dataSizeSource = dataSizeSource, dataSizeSink = dataSizeSink, 
                                                                                       resolutionSource = resolutionSource, resolutionSink = resolutionSink, orientation = orientation);
 
@@ -662,11 +658,12 @@ def resamplePoints(pointSource, pointSink = None, dataSizeSource = None, dataSiz
     #resolutionSinkI = orientResolutionInverse(resolutionSink, orientation);
         
     #scaling factors
-    scale = [float(dataSizeSource[i]) / float(dataSizeSinkI[i]) for i in range(3)];
+    temp = len(resolutionSource)
+    scale = [float(dataSizeSource[i]) / float(dataSizeSinkI[i]) for i in range(temp)];
     #print scale
     
     repoints = points.copy();
-    for i in range(3):    
+    for i in range(temp):    
         repoints[:,i] = repoints[:,i] / scale[i];
                
     #permute for non trivial orientation
@@ -674,7 +671,7 @@ def resamplePoints(pointSource, pointSink = None, dataSizeSource = None, dataSiz
         per = orientationToPermuation(orientation);
         repoints = repoints[:,per];
         
-        for i in range(3):
+        for i in range(temp):
             if orientation[i] < 0:
                 repoints[:,i] = dataSizeSink[i] - repoints[:,i];
       
