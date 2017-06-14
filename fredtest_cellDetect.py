@@ -13,14 +13,14 @@ img = img[...,numpy.newaxis]
 img = img.astype('int16'); # converting data to smaller integer types can be more memory efficient!
 
 imgB = bgr.removeBackground(img, size=backgroundSize, verbose = True)
-io.writeData(os.path.join(resultDir,'BackgroundRemoval.tif'), imgB);
+io.writeData(os.path.join(resultDir,fName+ 'BackgroundRemoval.tif'), imgB);
 
-#image filter
-imgD = filterDoG(imgB, size=DoGSize, verbose = True)
-io.writeData(os.path.join(resultDir,'FilterDoG.tif'), imgD);
+##image filter
+imgD = filterDoG(img, size=DoGSize, verbose = True)
+io.writeData(os.path.join(resultDir,fName+ 'FilterDoG.tif'), imgD);
 
 #Detect Maxima
-imgMaxima = findExtendedMaxima(imgD, hMax = None, verbose = True, threshold =maximaThresh )
+imgMaxima = findExtendedMaxima(img, hMax = None, verbose = True, threshold =maximaThresh )
 points = findCenterOfMaxima(img,imgMaxima,verbose = True);
 points =points.astype('int16');
 
@@ -28,7 +28,7 @@ points =points.astype('int16');
 dataShape = detectCellShape(imgD, points, threshold = cellShapeThresh, verbose = True);
 cellSizesPre = findCellSize(dataShape, maxlabel=points.shape[0])
 
-io.writeData(os.path.join(resultDir, 'CellShapes.tif'), 255*dataShape.astype('int32')/dataShape.max());
+io.writeData(os.path.join(resultDir, fName+ 'CellShapes.tif'), 255*dataShape.astype('int32')/dataShape.max());
 #cintensity = findIntensity(imgD, points);
 
 #points, intensities = thresholdPoints(points,cintensity, threshold = (5,20), row = (1,1));
@@ -38,10 +38,10 @@ points,cellSizesPost = thresholdPoints(points,cellSizesPre,threshold=pointsThres
 #io.writeData(os.path.join(homeDir, 'Results/OverlayWatershed.tif'), overlay_Img);
 
 overlay_Img = plt.fredOverlayPoints(input_fn, points, pointColor = [200,0,0]);
-io.writeData(os.path.join(resultDir, 'PointsOriginalImg.tif'), overlay_Img);
+io.writeData(os.path.join(resultDir, fName+ 'PointsOriginalImg.tif'), overlay_Img);
 
 overlay_Img = plt.overlayPoints(imgD, points, pointColor = [200,0,0]);
-io.writeData(os.path.join(resultDir, 'PointsFilterDoG.tif'), overlay_Img);
+io.writeData(os.path.join(resultDir, fName+ 'PointsFilterDoG.tif'), overlay_Img);
 #################################################################################################
 
 #Convert points from 3d to 2d

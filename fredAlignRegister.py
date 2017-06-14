@@ -33,7 +33,7 @@ io.writeElastixPoints(points_elastix_fn,pointsRe);
 #align data
 #alignData(auto_R_fn,refImg_fn, affineParameterFile, bSplineParameterFile, alignResultDir);
 
-bestSlice = autoAlignData(imgR, atlasDir, affineParameterFile, bSplineParameterFile, resultDirectory = alignDir, tempDir = tempDir, sliceNum = sliceNum , bounds = bounds,orientation = orientation)
+bestSlice = autoAlignData(imgR, atlasDir, affineParameterFile, bSplineParameterFile, resultDirectory = alignDir, tempDir = tempDir, lowB = lowB, upperB = upperB,orientation = orientation)
 
 annoImg_fn = os.path.join(annoDir, 'Anno'+str(bestSlice).zfill(3)+'.tif');
 refImg_fn  = os.path.join(atlasDir, 'Ref'+str(bestSlice).zfill(3)+'.tif');

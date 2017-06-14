@@ -285,17 +285,14 @@ def getMinMetric(fileDir, resolutions, samples,transformations):
                 metrics[k,j,i] = float(ls[1])
     return metrics.min()
 
-def autoAlignData(fixedImage, atlasDir, affineParameterFile, bSplineParameterFile, resultDirectory = None, tempDir = None,sliceNum = None, bounds = None,orientation = None):
+def autoAlignData(fixedImage, atlasDir, affineParameterFile, bSplineParameterFile, resultDirectory = None, tempDir = None, lowB = None, upperB = None,orientation = None):
     oldMetric = 0;
-    if sliceNum == None:
+    if lowB <0:
         lowB = 0;
-        if orientation == 'Coronal':
-            upperB = 527;
-        else:
-            upperB = 228;
-    else:
-        lowB = sliceNum-bounds;
-        upperB = sliceNum+bounds;
+    if upperB> 527 and orientation == 'Coronal':
+        upperB = 527;
+    if upperB>227 and orientation == 'Sagital':
+        upperB = 228;
     for i in range(lowB, upperB):
         movingImage = os.path.join(atlasDir,'Ref'+str(i).zfill(3)+'.tif')
         alignData(fixedImage,movingImage, affineParameterFile, bSplineParameterFile, tempDir);
@@ -342,6 +339,8 @@ def parseElastixOutputPoints(filename, indices = True):
         else:
             for i in range(0,2):
                 points[k,i] = float(ls[i+30]);
+        if points[k,0]>455: points[k,0] = 455;
+        if points[k,1]>319: points[k,1]=319;
         k += 1;
     
     return points;
@@ -377,8 +376,10 @@ def parseElastixOutputPoints2d(filename, indices = True):
         else:
 #            for i in range(0,2):
 #                points[k,i] = float(ls[i+30]);
-                points[k,0] = float(ls[27]);
-                points[k,1] = float(ls[28]);
+            points[k,0] = float(ls[27]);
+            points[k,1] = float(ls[28]);
+            if points[k,0]>455: points[k,0] = 455;
+            if points[k,1]>319: points[k,1]=319;
         k += 1;
     
     return points;
